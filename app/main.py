@@ -115,3 +115,33 @@ def perguntar(p: Pergunta):
     if melhor:
         return {"resposta": melhor["resposta"], "confianca": pontos}
     return {"resposta": "Ainda não sei responder isso. Ensine na aba Treino.", "confianca": 0}
+
+@app.get("/admin/api/seguranca", dependencies=[Depends(auth)])
+def seguranca():
+    import psycopg
+    url = os.getenv("DB_LEITOR_URL", "")
+    if not url:
+        return {"erro": "DB_LEITOR_URL vazia"}
+    try:
+        with psycopg.connect(url, connect_timeout=5) as c:
+            cur = c.cursor()
+            cur.execute("SELECT estado, COUNT(*) FROM turing_security_events GROUP BY 1")
+            totais = {e: n for e, n in cur.fetchall()}
+            cur.execute(
+                "SELECT criado_em, evento, estado, contexto->>%s FROM turing_security_events "
+                "WHERE estado IN (%s, %s) ORDER BY criado_em DESC LIMIT 30",
+                ("motivo", "WARN", "ALERT"),
+            )
+            recentes = [
+                {"quando": r[0].isoformat(), "evento": r[1], "estado": r[2], "motivo": r[3]}
+                for r in cur.fetchall()
+            ]
+        return {"totais": totais, "recentes": recentes}
+    except Exception as e:
+        return {"erro": type(e).__name__}
+
+from fastapi.staticfiles import StaticFiles
+app.mount("/static", StaticFiles(directory=str(BASE / "app" / "static")), name="static")
+
+from app.revisao import router as _rv
+app.include_router(_rv)

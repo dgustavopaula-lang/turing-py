@@ -17,14 +17,14 @@ pre{background:#0e1116;padding:10px;border-radius:8px;overflow:auto;max-height:3
 </style></head><body>
 <nav><b style="color:#2dd4bf">Turing Admin</b><br><br>
 <button class="on" data-s="painel">Painel</button>
-<button data-s="logs">Logs</button>
+<button data-s="seg">Seguranca</button>
 <button data-s="treino">Treino</button>
 <button data-s="testar">Testar</button>
 <button data-s="config">Config</button>
 <button id="sair">Sair</button></nav>
 <main>
 <section id="painel" class="on"><h2>Painel</h2><div class="c" id="st">...</div><button class="p" onclick="stt()">Verificar</button></section>
-<section id="logs"><h2>Logs</h2><pre id="lg"></pre><button class="p" onclick="lgs()">Atualizar</button></section>
+<section id="seg"><h2>Seguranca</h2><div class="c" id="sgt"></div><div id="sgr"></div><button class="p" onclick="sg()">Atualizar</button></section>
 <section id="treino"><h2>Treino</h2><div class="c"><input id="pq" placeholder="Pergunta"><textarea id="rs" rows="3" placeholder="Resposta"></textarea><button class="p" onclick="sv()">Ensinar</button></div><div id="ls"></div></section>
 <section id="testar"><h2>Testar</h2><div class="c"><input id="tx" placeholder="Pergunta"><button class="p" onclick="ts()">Perguntar</button><p id="rp"></p></div></section>
 <section id="config"><h2>Config</h2><div class="c" id="cf"></div></section>
@@ -58,4 +58,4 @@ async function ts(){const d=await api("perguntar",{method:"POST",body:JSON.strin
 async function cf(){const d=await api("config"),e=document.getElementById("cf");e.textContent="";
 Object.entries(d).forEach(([k,v])=>{const p=document.createElement("div");p.textContent=k+": "+(v?"preenchida":"vazia");p.className=v?"ok":"er";e.append(p);});}
 stt();
-</script></body></html>
+</script><script src="/static/login.js"></script><script src="/static/seg.js"></script><script src="/static/treino2.js"></script></body></html>
