@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Turing Admin</title>
+<style>
+body{margin:0;font-family:system-ui,sans-serif;background:#0e1116;color:#e6e9ee;display:flex;min-height:100vh}
+nav{width:190px;background:#171b22;padding:16px 10px}
+nav button{display:block;width:100%;text-align:left;background:none;border:0;color:#8a94a3;padding:10px;border-radius:8px;cursor:pointer}
+nav button.on{background:#202631;color:#e6e9ee}
+main{flex:1;padding:24px;max-width:860px}
+section{display:none}section.on{display:block}
+.c{background:#171b22;border:1px solid #262c36;border-radius:10px;padding:14px;margin-bottom:12px}
+input,textarea{width:100%;box-sizing:border-box;background:#0e1116;border:1px solid #262c36;color:#e6e9ee;border-radius:8px;padding:10px;margin-bottom:8px;font:inherit}
+.p{background:#2dd4bf;color:#04201c;border:0;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer}
+pre{background:#0e1116;padding:10px;border-radius:8px;overflow:auto;max-height:380px;font-size:12px}
+.ok{color:#2dd4bf}.er{color:#f87171}
+</style></head><body>
+<nav><b style="color:#2dd4bf">Turing Admin</b><br><br>
+<button class="on" data-s="painel">Painel</button>
+<button data-s="logs">Logs</button>
+<button data-s="treino">Treino</button>
+<button data-s="testar">Testar</button>
+<button data-s="config">Config</button>
+<button id="sair">Sair</button></nav>
+<main>
+<section id="painel" class="on"><h2>Painel</h2><div class="c" id="st">...</div><button class="p" onclick="stt()">Verificar</button></section>
+<section id="logs"><h2>Logs</h2><pre id="lg"></pre><button class="p" onclick="lgs()">Atualizar</button></section>
+<section id="treino"><h2>Treino</h2><div class="c"><input id="pq" placeholder="Pergunta"><textarea id="rs" rows="3" placeholder="Resposta"></textarea><button class="p" onclick="sv()">Ensinar</button></div><div id="ls"></div></section>
+<section id="testar"><h2>Testar</h2><div class="c"><input id="tx" placeholder="Pergunta"><button class="p" onclick="ts()">Perguntar</button><p id="rp"></p></div></section>
+<section id="config"><h2>Config</h2><div class="c" id="cf"></div></section>
+</main>
+<script>
+let T=sessionStorage.getItem("tk")||"";
+async function api(c,o={}){
+if(!T){T=prompt("ADMIN_TOKEN do .env")||"";sessionStorage.setItem("tk",T);}
+const r=await fetch("/admin/api/"+c,{...o,headers:{"Content-Type":"application/json","X-Admin-Token":T}});
+if(r.status===401){sessionStorage.removeItem("tk");T="";alert("Token invalido");throw 0;}
+return r.json();}
+document.querySelectorAll("nav button[data-s]").forEach(b=>b.onclick=()=>{
+document.querySelectorAll("nav button,section").forEach(x=>x.classList.remove("on"));
+b.classList.add("on");document.getElementById(b.dataset.s).classList.add("on");
+({painel:stt,logs:lgs,treino:ls,config:cf}[b.dataset.s]||(()=>{}))();});
+document.getElementById("sair").onclick=()=>{sessionStorage.removeItem("tk");location.reload();};
+async function stt(){const d=await api("status"),e=document.getElementById("st");e.textContent="";
+const s=document.createElement("b");s.className=d.online?"ok":"er";s.textContent=d.online?"API ONLINE":"API OFFLINE";
+e.append(s," "+(d.ms?d.ms+" ms":(d.erro||"")));}
+async function lgs(){const d=await api("logs");document.getElementById("lg").textContent=d.linhas.join("\n")||"Sem logs.";}
+async function ls(){const it=await api("kb"),b=document.getElementById("ls");b.textContent="";
+it.forEach(i=>{const c=document.createElement("div");c.className="c";
+const q=document.createElement("b");q.textContent=i.pergunta;
+const a=document.createElement("div");a.textContent=i.resposta;
+const x=document.createElement("button");x.className="p";x.textContent="Apagar";
+x.onclick=async()=>{await api("kb/"+i.id,{method:"DELETE"});ls();};
+c.append(q,a,x);b.append(c);});}
+async function sv(){const d=await api("kb",{method:"POST",body:JSON.stringify({pergunta:document.getElementById("pq").value,resposta:document.getElementById("rs").value})});
+if(d.ok){document.getElementById("pq").value="";document.getElementById("rs").value="";ls();}else alert(d.detail);}
+async function ts(){const d=await api("perguntar",{method:"POST",body:JSON.stringify({texto:document.getElementById("tx").value})});document.getElementById("rp").textContent=d.resposta;}
+async function cf(){const d=await api("config"),e=document.getElementById("cf");e.textContent="";
+Object.entries(d).forEach(([k,v])=>{const p=document.createElement("div");p.textContent=k+": "+(v?"preenchida":"vazia");p.className=v?"ok":"er";e.append(p);});}
+stt();
+</script></body></html>
